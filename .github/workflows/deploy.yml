@@ -59,7 +59,7 @@ jobs:
           fi
 
       - name: Deploy to Heroku
-        uses: 5hojib/heroku-deploy-action@v2
+        uses: AeonOrg/heroku-deploy-action@v2
         with:
           heroku_api_key: ${{inputs.HEROKU_API_KEY}}
           heroku_app_name: ${{inputs.HEROKU_APP_NAME}}
