@@ -1,5 +1,6 @@
 import re
 
+
 async def extract_metadata(filename: str) -> dict:
     metadata = {
         "title": "Unknown",
@@ -35,6 +36,7 @@ async def extract_metadata(filename: str) -> dict:
 
     return metadata
 
+
 def apply_rename_pattern(metadata: dict, pattern: str) -> str:
     return pattern.format(
         title=metadata.get("title", "Unknown"),
@@ -45,8 +47,10 @@ def apply_rename_pattern(metadata: dict, pattern: str) -> str:
         audio=metadata.get("audio", "NA"),
     )
 
+
 def is_autorename_enabled(user_settings: dict) -> bool:
     return user_settings.get("auto_rename_enabled", False)
+
 
 def toggle_user_rename(user_settings: dict, state: bool) -> dict:
     """Toggle the auto rename setting for a user."""
