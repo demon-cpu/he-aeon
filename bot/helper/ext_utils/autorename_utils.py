@@ -1,30 +1,5 @@
 import re
 
-
-async def ask_for_rename_pattern(client, message):
-    await message.reply_text(
-        "Please send the auto-rename pattern.\n\n"
-        "You can use these placeholders:\n"
-        "`{title}`, `{season}`, `{episode}`, `{year}`, `{quality}`, `{audio}`, `{ext}`\n\n"
-        "**Example:**\n`{title} - S{season}E{episode} - {quality}.{ext}`",
-    )
-    response = await client.listen(message.chat.id)
-    return response.text.strip()
-
-
-def is_autorename_enabled(user_settings: dict) -> bool:
-    """
-    Checks if auto rename is enabled for the user.
-    """
-    return user_settings.get("auto_rename_enabled", False)
-
-
-def extract_extension(filename: str) -> str:
-    if "." in filename:
-        return filename.rsplit(".", 1)[-1]
-    return ""
-
-
 async def extract_metadata(filename: str) -> dict:
     metadata = {
         "title": "Unknown",
@@ -60,7 +35,6 @@ async def extract_metadata(filename: str) -> dict:
 
     return metadata
 
-
 def apply_rename_pattern(metadata: dict, pattern: str) -> str:
     return pattern.format(
         title=metadata.get("title", "Unknown"),
@@ -71,14 +45,10 @@ def apply_rename_pattern(metadata: dict, pattern: str) -> str:
         audio=metadata.get("audio", "NA"),
     )
 
+def is_autorename_enabled(user_settings: dict) -> bool:
+    return user_settings.get("auto_rename_enabled", False)
 
-def format_rename(metadata: dict, ext: str, pattern: str) -> str:
-    return pattern.format(
-        title=metadata.get("title", "Unknown"),
-        season=metadata.get("season", "00"),
-        episode=metadata.get("episode", "00"),
-        year=metadata.get("year", "0000"),
-        quality=metadata.get("quality", "NA"),
-        audio=metadata.get("audio", "NA"),
-        ext=ext.lstrip("."),
-    )
+def toggle_user_rename(user_settings: dict, state: bool) -> dict:
+    """Toggle the auto rename setting for a user."""
+    user_settings["auto_rename_enabled"] = state
+    return user_settings
