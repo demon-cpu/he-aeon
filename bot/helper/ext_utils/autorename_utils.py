@@ -1,6 +1,7 @@
 import re
-from bot.modules.users_settings import get_user_settings_db, update_user_settings_db
+
 from bot import LOGGER
+from bot.modules.users_settings import update_user_settings_db
 
 
 async def extract_metadata(filename: str) -> dict:
@@ -71,11 +72,15 @@ async def ask_for_rename_pattern(bot, message):
         "`{audio}` – Audio (e.g. 5.1, AAC)\n\n"
         "Example:\n`{title} S{season}E{episode} [{quality} - {audio}]`\n\n"
         "_Reply with your desired format now._",
-        quote=True
+        quote=True,
     )
 
     def check(m):
-        return m.from_user.id == user_id and m.reply_to_message and m.reply_to_message.message_id == sent.message_id
+        return (
+            m.from_user.id == user_id
+            and m.reply_to_message
+            and m.reply_to_message.message_id == sent.message_id
+        )
 
     try:
         user_response = await bot.listen(message.chat.id, check=check, timeout=300)
@@ -85,7 +90,9 @@ async def ask_for_rename_pattern(bot, message):
             return await message.reply("❌ Pattern cannot be empty.")
 
         await update_user_settings_db(user_id, {"rename_pattern": pattern})
-        return await message.reply(f"✅ Your rename pattern has been set to:\n`{pattern}`")
+        return await message.reply(
+            f"✅ Your rename pattern has been set to:\n`{pattern}`"
+        )
 
     except TimeoutError:
         return await message.reply("⌛ Timed out. Please try again.")
