@@ -56,9 +56,7 @@ class TelegramDownloadHelper:
                 await send_status_message(self._listener.message)
             LOGGER.info(f"Download from Telegram: {self._listener.name}")
         else:
-            LOGGER.info(
-                f"Start Queued Download from Telegram: {self._listener.name}",
-            )
+            LOGGER.info(f"Start Queued Download from Telegram: {self._listener.name}")
 
     async def _on_download_progress(self, current, _):
         if self._listener.is_cancelled:
@@ -109,13 +107,12 @@ class TelegramDownloadHelper:
                         media.file_name if hasattr(media, "file_name") else "None"
                     )
                     user_settings = await get_user_settings(
-                        self._listener.message.from_user.id,
+                        self._listener.message.from_user.id
                     )
                     if await is_autorename_enabled(user_settings):
                         meta = await extract_metadata(orig_name)
                         renamed = await apply_rename_pattern(
-                            user_settings["rename_pattern"],
-                            meta,
+                            user_settings["rename_pattern"], meta
                         )
                         self._listener.name = renamed or orig_name
                     else:
@@ -136,9 +133,7 @@ class TelegramDownloadHelper:
                     LOGGER.info(f"Added to Queue/Download: {self._listener.name}")
                     async with task_dict_lock:
                         task_dict[self._listener.mid] = QueueStatus(
-                            self._listener,
-                            gid,
-                            "dl",
+                            self._listener, gid, "dl"
                         )
                     await self._listener.on_download_start()
                     if self._listener.multi <= 1:
@@ -155,12 +150,12 @@ class TelegramDownloadHelper:
                 await self._on_download_error("File already being downloaded!")
         else:
             await self._on_download_error(
-                "No document in the replied message! Use SuperGroup in case you are trying to download with User session!",
+                "No document in the replied message! Use SuperGroup in case you are trying to download with User session!"
             )
 
     async def cancel_task(self):
         self._listener.is_cancelled = True
         LOGGER.info(
-            f"Cancelling download on user request: name: {self._listener.name} id: {self._id}",
+            f"Cancelling download on user request: name: {self._listener.name} id: {self._id}"
         )
         await self._on_download_error("Stopped by user!")
