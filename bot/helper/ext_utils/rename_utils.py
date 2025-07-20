@@ -1,4 +1,5 @@
 from bot import MongoClient
+from .media_utils import extract_metadata
 
 # MongoDB collection
 RENAMER_DB = MongoClient.auto_renamer
@@ -41,33 +42,23 @@ def format_filename(format_string, metadata: dict, ext: str = ".mkv"):
         return None
 
 
-# 🔁 STEP 3: Auto Rename Function
-async def apply_rename_pattern(message, original_name: str) -> str:
-    import os
-    import re
+# Check if autorename is enabled for the user
+async def is_autorename_enabled(user_id: int) -> bool:
+    doc = await RENAMER_DB.find_one({"_id": user_id})
+    return bool(doc and doc.get("enabled", False))
 
-    from bot.helper.ext_utils.rename_utils import format_filename, get_user_format
 
+# Main handler to apply renaming pattern using user format and media metadata
+async def apply_rename_pattern(message, original_name: str):
     user_id = message.from_user.id
-    fmt = await get_user_format(user_id)
-    if not fmt:
+    format_string = await get_user_format(user_id)
+    
+    if not format_string:
         return original_name
 
-    # Try to extract metadata from original_name
-    pattern = r"(.*?)[.\s_-]*[Ss](\d+)[.\s_-]*[Ee](\d+).*?(\d{3,4}p)?[.\s_-]*([a-zA-Z0-9]+)?"
-    match = re.search(pattern, original_name)
-    if not match:
+    metadata = await extract_metadata(message, original_name)
+    if not metadata:
         return original_name
 
-    metadata = {
-        "title": match.group(1).replace(".", " ").replace("_", " ").strip(),
-        "season": match.group(2).zfill(2),
-        "episode": match.group(3).zfill(2),
-        "quality": match.group(4) or "720p",
-        "audio": match.group(5) or "DDP",
-        "year": "2024",
-    }
-
-    ext = os.path.splitext(original_name)[-1]
-    renamed = format_filename(fmt, metadata, ext)
-    return renamed or original_name
+    new_name = format_filename(format_string, metadata)
+    return new_name or original_name
