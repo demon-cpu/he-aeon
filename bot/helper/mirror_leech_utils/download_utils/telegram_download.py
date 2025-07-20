@@ -114,13 +114,17 @@ class TelegramDownloadHelper:
             async with global_lock:
                 download = media.file_unique_id not in GLOBAL_GID
 
-            if download:
-                if self._listener.name == "":
-                    self._listener.name = (
-                        media.file_name if hasattr(media, "file_name") else "None"
-                    )
-                else:
-                    path = path + self._listener.name
+            if self._listener.name == "":
+    orig_name = media.file_name if hasattr(media, "file_name") else "None"
+    user_settings = await get_user_settings(self._listener.message.from_user.id)
+    if await is_autorename_enabled(user_settings):
+        meta = await extract_metadata(orig_name)
+        renamed = await apply_rename_pattern(user_settings["rename_pattern"], meta)
+        self._listener.name = renamed or orig_name
+    else:
+        self._listener.name = orig_name
+else:
+    path = path + self._listener.name
                 self._listener.size = media.file_size
                 gid = token_hex(4)  # media.file_unique_id
                 # test token_hex as gid
