@@ -772,7 +772,7 @@ class FFMpeg:
 
         return True
         
-    async def extract_metadata(message, filename: str) -> dict:
+async def extract_metadata(message, filename: str) -> dict:
     """
     Extracts metadata like title, season, episode, year, quality, audio from a filename.
     Adjust the regex patterns as per your naming convention if needed.
