@@ -26,6 +26,14 @@ from bot.helper.telegram_helper.message_utils import (
     send_file,
     send_message,
 )
+from bot.helper.ext_utils.rename_utils import (
+    set_user_format,
+    get_user_format,
+    disable_user_renamer,
+    DEFAULT_FORMAT
+)
+
+from bot.helper.ext_utils.autorename_utils import toggle_user_rename, is_autorename_enabled, ask_for_rename_pattern
 
 handler_dict = {}
 no_thumb = "https://graph.org/file/73ae908d18c6b38038071.jpg"
@@ -64,6 +72,7 @@ async def get_user_settings(from_user):
 
     # Buttons
     buttons.data_button("Leech", f"userset {user_id} leech")
+    buttons.data_button("📝 Auto Rename", f"fuserset {user_id} toggle_rename")
     buttons.data_button("Rclone", f"userset {user_id} rclone")
     buttons.data_button("Gdrive Tools", f"userset {user_id} gdrive")
     buttons.data_button("Upload Paths", f"userset {user_id} upload_paths")
@@ -895,3 +904,22 @@ async def get_users_settings(_, message):
             await send_message(message, msg)
     else:
         await send_message(message, "No users data!")
+
+@Client.on_callback_query(filters.regex("toggle_rename"))
+async def toggle_rename_setting(client, query):
+    user_id = query.from_user.id
+    current_status = await is_autorename_enabled(user_id)
+
+    if current_status:
+        await toggle_user_rename(user_id, False)
+        await query.answer("Auto Rename Disabled", show_alert=True)
+        await query.message.edit("❌ Auto Rename has been disabled.")
+    else:
+        await toggle_user_rename(user_id, True)
+        await query.answer("Auto Rename Enabled", show_alert=True)
+        await ask_for_rename_pattern(query.message, user_id)
+
+    # 🔁 Refresh the settings menu
+    from_user = query.from_user
+    msg, button, thumb = await get_user_settings(from_user)
+    await send_message(query.message, msg, button, thumb, markdown=True)
