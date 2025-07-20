@@ -1,5 +1,6 @@
 import re
 
+
 # Extracts metadata like title, season, episode, year, etc. from a file name
 async def extract_metadata(filename: str) -> dict:
     metadata = {
@@ -36,6 +37,7 @@ async def extract_metadata(filename: str) -> dict:
 
     return metadata
 
+
 # Applies the user-defined rename pattern
 def apply_rename_pattern(metadata: dict, pattern: str) -> str:
     try:
@@ -50,18 +52,26 @@ def apply_rename_pattern(metadata: dict, pattern: str) -> str:
     except KeyError as e:
         return f"Invalid pattern: Missing key {e}"
 
+
 # Checks if auto rename is enabled for the user
 def is_autorename_enabled(user_settings: dict) -> bool:
     return user_settings.get("auto_rename_enabled", False)
 
+
 # Get the user's custom rename pattern (fallback to default)
 def get_user_rename_pattern(user_settings: dict) -> str:
-    return user_settings.get("rename_pattern", "{title} - S{season}E{episode} [{quality}]")
+    return user_settings.get(
+        "rename_pattern", "{title} - S{season}E{episode} [{quality}]"
+    )
+
 
 # Toggle auto rename ON/OFF
 def toggle_user_rename(user_settings: dict) -> dict:
-    user_settings["auto_rename_enabled"] = not user_settings.get("auto_rename_enabled", False)
+    user_settings["auto_rename_enabled"] = not user_settings.get(
+        "auto_rename_enabled", False
+    )
     return user_settings
+
 
 # Ask for rename pattern input message
 def ask_for_rename_pattern() -> str:
