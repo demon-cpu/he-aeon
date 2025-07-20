@@ -110,7 +110,7 @@ class TelegramDownloadHelper:
             or None
         )
 
-        if media is not None:
+if media is not None:
     async with global_lock:
         download = media.file_unique_id not in GLOBAL_GID
 
