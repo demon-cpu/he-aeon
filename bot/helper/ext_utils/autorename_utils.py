@@ -1,12 +1,8 @@
 import re
-
-from bot.helper.ext_utils.autorename_utils import (
-    ask_for_rename_pattern,
-    toggle_user_rename,
-)
+from bot.modules.users_settings import get_user_settings_db, update_user_settings_db
+from bot import LOGGER
 
 
-# Extracts metadata like title, season, episode, year, etc. from a file name
 async def extract_metadata(filename: str) -> dict:
     metadata = {
         "title": "Unknown",
@@ -43,7 +39,6 @@ async def extract_metadata(filename: str) -> dict:
     return metadata
 
 
-# Applies the user-defined rename pattern
 def apply_rename_pattern(metadata: dict, pattern: str) -> str:
     try:
         return pattern.format(
@@ -54,39 +49,43 @@ def apply_rename_pattern(metadata: dict, pattern: str) -> str:
             quality=metadata.get("quality", "NA"),
             audio=metadata.get("audio", "NA"),
         )
-    except KeyError as e:
-        return f"Invalid pattern: Missing key {e}"
+    except Exception as e:
+        LOGGER.error(f"Rename pattern error: {e}")
+        return f"{metadata.get('title', 'Unknown')} - RENAMING ERROR"
 
 
-# Checks if auto rename is enabled for the user
 def is_autorename_enabled(user_settings: dict) -> bool:
     return user_settings.get("auto_rename_enabled", False)
 
 
-# Get the user's custom rename pattern (fallback to default)
-def get_user_rename_pattern(user_settings: dict) -> str:
-    return user_settings.get(
-        "rename_pattern",
-        "{title} - S{season}E{episode} [{quality}]",
+async def ask_for_rename_pattern(bot, message):
+    user_id = message.from_user.id
+    sent = await message.reply_text(
+        "**📝 Send your rename pattern.**\n\n"
+        "You can use:\n"
+        "`{title}` – Title\n"
+        "`{season}` – Season\n"
+        "`{episode}` – Episode\n"
+        "`{year}` – Year\n"
+        "`{quality}` – Quality (e.g. 720p)\n"
+        "`{audio}` – Audio (e.g. 5.1, AAC)\n\n"
+        "Example:\n`{title} S{season}E{episode} [{quality} - {audio}]`\n\n"
+        "_Reply with your desired format now._",
+        quote=True
     )
 
+    def check(m):
+        return m.from_user.id == user_id and m.reply_to_message and m.reply_to_message.message_id == sent.message_id
 
-# Toggle auto rename ON/OFF
-def toggle_user_rename(user_settings: dict) -> dict:
-    user_settings["auto_rename_enabled"] = not user_settings.get(
-        "auto_rename_enabled",
-        False,
-    )
-    return user_settings
+    try:
+        user_response = await bot.listen(message.chat.id, check=check, timeout=300)
+        pattern = user_response.text.strip()
 
+        if not pattern:
+            return await message.reply("❌ Pattern cannot be empty.")
 
-# Ask for rename pattern input message
-def ask_for_rename_pattern() -> str:
-    return (
-        "✍️ Please send your custom rename pattern.\n\n"
-        "You can use the following placeholders:\n"
-        "`{title}`, `{season}`, `{episode}`, `{year}`, `{quality}`, `{audio}`\n\n"
-        "Example:\n"
-        "`{title} - S{season}E{episode} [{quality}]`\n\n"
-        "To reset, type `default`."
-    )
+        await update_user_settings_db(user_id, {"rename_pattern": pattern})
+        return await message.reply(f"✅ Your rename pattern has been set to:\n`{pattern}`")
+
+    except TimeoutError:
+        return await message.reply("⌛ Timed out. Please try again.")
