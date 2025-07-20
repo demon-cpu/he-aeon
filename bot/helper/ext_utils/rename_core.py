@@ -1,13 +1,17 @@
 from bot.helper.telegram_helper.db_mongo import get_user_settings_db
 
+
 async def get_user_settings(user_id):
     return await get_user_settings_db(user_id)
+
 
 async def is_autorename_enabled(settings):
     return settings.get("autorename", False)
 
+
 async def extract_metadata(filename):
     import re
+
     name = filename.rsplit(".", 1)[0]
     pattern = r"(S\d{2})[\s._-]?(E\d{2})"
     match = re.search(pattern, name, re.IGNORECASE)
@@ -24,6 +28,7 @@ async def extract_metadata(filename):
         "episode": episode,
         "quality": quality,
     }
+
 
 async def apply_rename_pattern(pattern, metadata):
     name = pattern
