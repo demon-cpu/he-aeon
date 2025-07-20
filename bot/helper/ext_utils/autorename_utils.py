@@ -91,7 +91,7 @@ async def ask_for_rename_pattern(bot, message):
 
         await update_user_settings_db(user_id, {"rename_pattern": pattern})
         return await message.reply(
-            f"✅ Your rename pattern has been set to:\n`{pattern}`"
+            f"✅ Your rename pattern has been set to:\n`{pattern}`",
         )
 
     except TimeoutError:
