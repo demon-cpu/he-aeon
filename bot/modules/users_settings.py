@@ -12,6 +12,11 @@ from pyrogram.handlers import MessageHandler
 from bot import extension_filter, user_data
 from bot.core.aeon_client import TgClient
 from bot.core.config_manager import Config
+from bot.helper.ext_utils.autorename_utils import (
+    ask_for_rename_pattern,
+    is_autorename_enabled,
+    toggle_user_rename,
+)
 from bot.helper.ext_utils.bot_utils import (
     new_task,
     update_user_ldata,
@@ -26,14 +31,6 @@ from bot.helper.telegram_helper.message_utils import (
     send_file,
     send_message,
 )
-from bot.helper.ext_utils.rename_utils import (
-    set_user_format,
-    get_user_format,
-    disable_user_renamer,
-    DEFAULT_FORMAT
-)
-
-from bot.helper.ext_utils.autorename_utils import toggle_user_rename, is_autorename_enabled, ask_for_rename_pattern
 
 handler_dict = {}
 no_thumb = "https://graph.org/file/73ae908d18c6b38038071.jpg"
@@ -904,6 +901,7 @@ async def get_users_settings(_, message):
             await send_message(message, msg)
     else:
         await send_message(message, "No users data!")
+
 
 @Client.on_callback_query(filters.regex("toggle_rename"))
 async def toggle_rename_setting(client, query):
