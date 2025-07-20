@@ -1,4 +1,5 @@
 from bot import MongoClient
+
 from .media_utils import extract_metadata
 
 # MongoDB collection
@@ -52,7 +53,7 @@ async def is_autorename_enabled(user_id: int) -> bool:
 async def apply_rename_pattern(message, original_name: str):
     user_id = message.from_user.id
     format_string = await get_user_format(user_id)
-    
+
     if not format_string:
         return original_name
 
