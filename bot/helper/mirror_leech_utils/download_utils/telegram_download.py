@@ -5,12 +5,6 @@ from time import time
 from pyrogram.errors import FloodPremiumWait, FloodWait
 
 from bot import LOGGER, task_dict, task_dict_lock
-from bot.helper.ext_utils.rename_core import (
-    apply_rename_pattern,
-    extract_metadata,
-    get_user_settings,
-    is_autorename_enabled,
-)
 from bot.helper.ext_utils.task_manager import (
     check_running_tasks,
     stop_duplicate_check,
@@ -18,6 +12,12 @@ from bot.helper.ext_utils.task_manager import (
 from bot.helper.mirror_leech_utils.status_utils.queue_status import QueueStatus
 from bot.helper.mirror_leech_utils.status_utils.telegram_status import TelegramStatus
 from bot.helper.telegram_helper.message_utils import send_status_message
+from bot.helper.ext_utils.rename_core import (
+    extract_metadata,
+    apply_rename_pattern,
+    get_user_settings,
+    is_autorename_enabled,
+)
 
 global_lock = Lock()
 GLOBAL_GID = set()
@@ -56,9 +56,7 @@ class TelegramDownloadHelper:
                 await send_status_message(self._listener.message)
             LOGGER.info(f"Download from Telegram: {self._listener.name}")
         else:
-            LOGGER.info(
-                f"Start Queued Download from Telegram: {self._listener.name}"
-            )
+            LOGGER.info(f"Start Queued Download from Telegram: {self._listener.name}")
 
     async def _on_download_progress(self, current, _):
         if self._listener.is_cancelled:
@@ -99,66 +97,67 @@ class TelegramDownloadHelper:
             await self._on_download_error("Internal error occurred")
 
     async def start_download(self, message, media, path):
-        if media is None:
-            await self._on_download_error(
-                "No document in the replied message! Use SuperGroup in case you are trying to download with User session!",
-            )
-            return
+        if media is not None:
+            async with global_lock:
+                download = media.file_unique_id not in GLOBAL_GID
 
-        async with global_lock:
-            download = media.file_unique_id not in GLOBAL_GID
+            if download:
+                if self._listener.name == "":
+                    orig_name = (
+                        media.file_name if hasattr(media, "file_name") else "None"
+                    )
+                    user_settings = await get_user_settings(
+                        self._listener.message.from_user.id
+                    )
+                    if await is_autorename_enabled(user_settings):
+                        meta = await extract_metadata(orig_name)
+                        renamed = await apply_rename_pattern(
+                            user_settings["rename_pattern"], meta
+                        )
+                        self._listener.name = renamed or orig_name
+                    else:
+                        self._listener.name = orig_name
+                else:
+                    path = path + self._listener.name
 
-        if not download:
-            await self._on_download_error("File already being downloaded!")
-            return
+                self._listener.size = media.file_size
+                gid = token_hex(4)
 
-        # Apply auto-rename if applicable
-        if self._listener.name == "":
-            orig_name = media.file_name if hasattr(media, "file_name") else "None"
-            user_settings = await get_user_settings(
-                self._listener.message.from_user.id
-            )
-            if await is_autorename_enabled(user_settings):
-                meta = await extract_metadata(orig_name)
-                renamed = await apply_rename_pattern(
-                    user_settings["rename_pattern"], meta
-                )
-                self._listener.name = renamed or orig_name
+                msg, button = await stop_duplicate_check(self._listener)
+                if msg:
+                    await self._on_download_error(msg, button)
+                    return
+
+                add_to_queue, event = await check_running_tasks(self._listener)
+                if add_to_queue:
+                    LOGGER.info(f"Added to Queue/Download: {self._listener.name}")
+                    async with task_dict_lock:
+                        task_dict[self._listener.mid] = QueueStatus(
+                            self._listener,
+                            gid,
+                            "dl",
+                        )
+                    await self._listener.on_download_start()
+                    if self._listener.multi <= 1:
+                        await send_status_message(self._listener.message)
+                    await event.wait()
+                    if self._listener.is_cancelled:
+                        async with global_lock:
+                            GLOBAL_GID.discard(self._id)
+                        return
+
+                await self._on_download_start(gid, add_to_queue)
+                await self._download(message, path)
             else:
-                self._listener.name = orig_name
+                await self._on_download_error("File already being downloaded!")
         else:
-            path = path + self._listener.name
-
-        self._listener.size = media.file_size
-        gid = token_hex(4)
-
-        msg, button = await stop_duplicate_check(self._listener)
-        if msg:
-            await self._on_download_error(msg, button)
-            return
-
-        add_to_queue, event = await check_running_tasks(self._listener)
-        if add_to_queue:
-            LOGGER.info(f"Added to Queue/Download: {self._listener.name}")
-            async with task_dict_lock:
-                task_dict[self._listener.mid] = QueueStatus(
-                    self._listener, gid, "dl"
-                )
-            await self._listener.on_download_start()
-            if self._listener.multi <= 1:
-                await send_status_message(self._listener.message)
-            await event.wait()
-            if self._listener.is_cancelled:
-                async with global_lock:
-                    GLOBAL_GID.discard(self._id)
-                return
-
-        await self._on_download_start(gid, add_to_queue)
-        await self._download(message, path)
+            await self._on_download_error(
+                "No document in the replied message! Use SuperGroup in case you are trying to download with User session!"
+            )
 
     async def cancel_task(self):
         self._listener.is_cancelled = True
         LOGGER.info(
-            f"Cancelling download on user request: name: {self._listener.name} id: {self._id}",
+            f"Cancelling download on user request: name: {self._listener.name} id: {self._id}"
         )
         await self._on_download_error("Stopped by user!")
