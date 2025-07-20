@@ -5,6 +5,12 @@ from time import time
 from pyrogram.errors import FloodPremiumWait, FloodWait
 
 from bot import LOGGER, task_dict, task_dict_lock
+from bot.helper.ext_utils.rename_core import (
+    apply_rename_pattern,
+    extract_metadata,
+    get_user_settings,
+    is_autorename_enabled,
+)
 from bot.helper.ext_utils.task_manager import (
     check_running_tasks,
     stop_duplicate_check,
@@ -12,12 +18,6 @@ from bot.helper.ext_utils.task_manager import (
 from bot.helper.mirror_leech_utils.status_utils.queue_status import QueueStatus
 from bot.helper.mirror_leech_utils.status_utils.telegram_status import TelegramStatus
 from bot.helper.telegram_helper.message_utils import send_status_message
-from bot.helper.ext_utils.rename_core import (
-    extract_metadata,
-    apply_rename_pattern,
-    get_user_settings,
-    is_autorename_enabled,
-)
 
 global_lock = Lock()
 GLOBAL_GID = set()
@@ -45,7 +45,10 @@ class TelegramDownloadHelper:
         self._id = file_id
         async with task_dict_lock:
             task_dict[self._listener.mid] = TelegramStatus(
-                self._listener, self, file_id[:12], "dl"
+                self._listener,
+                self,
+                file_id[:12],
+                "dl",
             )
         if not from_queue:
             await self._listener.on_download_start()
@@ -53,7 +56,9 @@ class TelegramDownloadHelper:
                 await send_status_message(self._listener.message)
             LOGGER.info(f"Download from Telegram: {self._listener.name}")
         else:
-            LOGGER.info(f"Start Queued Download from Telegram: {self._listener.name}")
+            LOGGER.info(
+                f"Start Queued Download from Telegram: {self._listener.name}"
+            )
 
     async def _on_download_progress(self, current, _):
         if self._listener.is_cancelled:
@@ -110,10 +115,14 @@ class TelegramDownloadHelper:
         # Apply auto-rename if applicable
         if self._listener.name == "":
             orig_name = media.file_name if hasattr(media, "file_name") else "None"
-            user_settings = await get_user_settings(self._listener.message.from_user.id)
+            user_settings = await get_user_settings(
+                self._listener.message.from_user.id
+            )
             if await is_autorename_enabled(user_settings):
                 meta = await extract_metadata(orig_name)
-                renamed = await apply_rename_pattern(user_settings["rename_pattern"], meta)
+                renamed = await apply_rename_pattern(
+                    user_settings["rename_pattern"], meta
+                )
                 self._listener.name = renamed or orig_name
             else:
                 self._listener.name = orig_name
@@ -132,7 +141,9 @@ class TelegramDownloadHelper:
         if add_to_queue:
             LOGGER.info(f"Added to Queue/Download: {self._listener.name}")
             async with task_dict_lock:
-                task_dict[self._listener.mid] = QueueStatus(self._listener, gid, "dl")
+                task_dict[self._listener.mid] = QueueStatus(
+                    self._listener, gid, "dl"
+                )
             await self._listener.on_download_start()
             if self._listener.multi <= 1:
                 await send_status_message(self._listener.message)
