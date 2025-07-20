@@ -22,8 +22,14 @@ from bot.helper.ext_utils.rename_core import (
 global_lock = Lock()
 GLOBAL_GID = set()
 
-class TelegramDownloadHelper: def init(self, listener): self._processed_bytes = 0 self._start_time = time() self._listener = listener self._id = "" self.session = ""
-
+class TelegramDownloadHelper:
+    def __init__(self, listener):
+        self._processed_bytes = 0
+        self._start_time = time()
+        self._listener = listener
+        self._id = ""
+        self.session = ""
+        
 @property
 def speed(self):
     return self._processed_bytes / (time() - self._start_time)
