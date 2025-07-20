@@ -111,46 +111,48 @@ class TelegramDownloadHelper:
         )
 
         if media is not None:
-            async with global_lock:
-                download = media.file_unique_id not in GLOBAL_GID
+    async with global_lock:
+        download = media.file_unique_id not in GLOBAL_GID
 
-            if self._listener.name == "":
-    orig_name = media.file_name if hasattr(media, "file_name") else "None"
-    user_settings = await get_user_settings(self._listener.message.from_user.id)
-    if await is_autorename_enabled(user_settings):
-        meta = await extract_metadata(orig_name)
-        renamed = await apply_rename_pattern(user_settings["rename_pattern"], meta)
-        self._listener.name = renamed or orig_name
-    else:
-        self._listener.name = orig_name
-else:
-    path = path + self._listener.name
-                self._listener.size = media.file_size
-                gid = token_hex(4)  # media.file_unique_id
-                # test token_hex as gid
+    if download:
+        if self._listener.name == "":
+            orig_name = media.file_name if hasattr(media, "file_name") else "None"
+            user_settings = await get_user_settings(self._listener.message.from_user.id)
+            if await is_autorename_enabled(user_settings):
+                meta = await extract_metadata(orig_name)
+                renamed = await apply_rename_pattern(user_settings["rename_pattern"], meta)
+                self._listener.name = renamed or orig_name
+            else:
+                self._listener.name = orig_name
+        else:
+            path = path + self._listener.name
 
-                msg, button = await stop_duplicate_check(self._listener)
-                if msg:
-                    await self._listener.on_download_error(msg, button)
-                    return
+        self._listener.size = media.file_size
+        gid = token_hex(4)  # media.file_unique_id
+        # test token_hex as gid
 
-                add_to_queue, event = await check_running_tasks(self._listener)
-                if add_to_queue:
-                    LOGGER.info(f"Added to Queue/Download: {self._listener.name}")
-                    async with task_dict_lock:
-                        task_dict[self._listener.mid] = QueueStatus(
-                            self._listener,
-                            gid,
-                            "dl",
-                        )
-                    await self._listener.on_download_start()
-                    if self._listener.multi <= 1:
-                        await send_status_message(self._listener.message)
-                    await event.wait()
-                    if self._listener.is_cancelled:
-                        async with global_lock:
-                            GLOBAL_GID.discard(self._id)
-                        return
+        msg, button = await stop_duplicate_check(self._listener)
+        if msg:
+            await self._listener.on_download_error(msg, button)
+            return
+
+        add_to_queue, event = await check_running_tasks(self._listener)
+        if add_to_queue:
+            LOGGER.info(f"Added to Queue/Download: {self._listener.name}")
+            async with task_dict_lock:
+                task_dict[self._listener.mid] = QueueStatus(
+                    self._listener,
+                    gid,
+                    "dl",
+                )
+            await self._listener.on_download_start()
+            if self._listener.multi <= 1:
+                await send_status_message(self._listener.message)
+            await event.wait()
+            if self._listener.is_cancelled:
+                async with global_lock:
+                    GLOBAL_GID.discard(self._id)
+                return
 
                 await self._on_download_start(gid, add_to_queue)
                 await self._download(message, path)
