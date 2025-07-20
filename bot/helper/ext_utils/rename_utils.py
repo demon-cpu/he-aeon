@@ -6,6 +6,7 @@ RENAMER_DB = MongoClient.auto_renamer
 # Default format
 DEFAULT_FORMAT = "{title} S{season}E{episode} [{quality}][{audio}] ({year})"
 
+
 # Save or update user renaming format
 async def set_user_format(user_id: int, format_string: str):
     await RENAMER_DB.update_one(
@@ -14,6 +15,7 @@ async def set_user_format(user_id: int, format_string: str):
         upsert=True,
     )
 
+
 # Disable auto renaming
 async def disable_user_renamer(user_id: int):
     await RENAMER_DB.update_one(
@@ -21,12 +23,14 @@ async def disable_user_renamer(user_id: int):
         {"$set": {"enabled": False}},
     )
 
+
 # Get current format (returns format string or None if disabled)
 async def get_user_format(user_id: int):
     doc = await RENAMER_DB.find_one({"_id": user_id})
     if doc and doc.get("enabled", False):
         return doc.get("format", DEFAULT_FORMAT)
     return None
+
 
 # Format renaming based on user input + extracted metadata
 def format_filename(format_string, metadata: dict, ext: str = ".mkv"):
@@ -36,11 +40,13 @@ def format_filename(format_string, metadata: dict, ext: str = ".mkv"):
     except KeyError:
         return None
 
+
 # 🔁 STEP 3: Auto Rename Function
 async def apply_rename_pattern(message, original_name: str) -> str:
-    import re
     import os
-    from bot.helper.ext_utils.rename_utils import get_user_format, format_filename
+    import re
+
+    from bot.helper.ext_utils.rename_utils import format_filename, get_user_format
 
     user_id = message.from_user.id
     fmt = await get_user_format(user_id)
