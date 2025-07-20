@@ -45,6 +45,7 @@ async def extract_metadata(filename: str) -> dict:
 
     return metadata
 
+
 def apply_rename_pattern(metadata: dict, pattern: str) -> str:
     """
     Applies a custom renaming pattern using extracted metadata.
@@ -56,5 +57,5 @@ def apply_rename_pattern(metadata: dict, pattern: str) -> str:
         episode=metadata.get("episode", "00"),
         year=metadata.get("year", "0000"),
         quality=metadata.get("quality", "NA"),
-        audio=metadata.get("audio", "NA")
+        audio=metadata.get("audio", "NA"),
     )
