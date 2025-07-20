@@ -2,6 +2,9 @@ from asyncio import Lock, sleep
 from secrets import token_hex
 from time import time
 
+from bot.modules.users_settings import get_user_settings
+from bot.helper.ext_utils.autorename_utils import is_autorename_enabled, apply_rename_pattern, extract_metadata
+
 from pyrogram.errors import FloodPremiumWait, FloodWait
 
 from bot import LOGGER, task_dict, task_dict_lock
