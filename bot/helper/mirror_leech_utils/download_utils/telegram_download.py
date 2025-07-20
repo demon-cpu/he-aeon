@@ -98,17 +98,6 @@ class TelegramDownloadHelper:
             message_ids=message.id,
         )
 
-        media = (
-            message.document
-            or message.photo
-            or message.video
-            or message.audio
-            or message.voice
-            or message.video_note
-            or message.sticker
-            or message.animation
-            or None
-        )
 
 if media is not None:
     async with global_lock:
@@ -117,10 +106,14 @@ if media is not None:
     if download:
         if self._listener.name == "":
             orig_name = media.file_name if hasattr(media, "file_name") else "None"
-            user_settings = await get_user_settings(self._listener.message.from_user.id)
+            user_settings = await get_user_settings(
+                self._listener.message.from_user.id
+            )
             if await is_autorename_enabled(user_settings):
                 meta = await extract_metadata(orig_name)
-                renamed = await apply_rename_pattern(user_settings["rename_pattern"], meta)
+                renamed = await apply_rename_pattern(
+                    user_settings["rename_pattern"], meta
+                )
                 self._listener.name = renamed or orig_name
             else:
                 self._listener.name = orig_name
