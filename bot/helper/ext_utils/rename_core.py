@@ -1,4 +1,4 @@
-from bot.modules.telegram_helper.db_mongo import get_user_settings_db
+from bot.modules.users_settings import get_user_settings_db
 
 
 async def get_user_settings(user_id):
