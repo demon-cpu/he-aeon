@@ -5,6 +5,8 @@ from re import match as re_match
 
 from aiofiles.os import path as aiopath
 
+from bot.helper.ext_utils.autorename_utils import extract_metadata, apply_rename_pattern
+
 from bot import LOGGER, bot_loop, task_dict_lock
 from bot.core.aeon_client import TgClient
 from bot.core.config_manager import Config
@@ -13,6 +15,7 @@ from bot.helper.ext_utils.autorename_utils import (
     apply_rename_pattern,
     is_autorename_enabled,
 )
+from bot.modules.users_settings import get_user_settings
 from bot.helper.ext_utils.bot_utils import (
     COMMAND_USAGE,
     arg_parser,
