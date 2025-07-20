@@ -1,10 +1,8 @@
 import re
-from pyrogram import filters
-from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
-from bot import BOT_NAME, LOGGER, user_settings_col
+
 from bot.helper.ext_utils.autorename_utils import (
-    toggle_user_rename,
     ask_for_rename_pattern,
+    toggle_user_rename,
 )
 
 
@@ -68,14 +66,16 @@ def is_autorename_enabled(user_settings: dict) -> bool:
 # Get the user's custom rename pattern (fallback to default)
 def get_user_rename_pattern(user_settings: dict) -> str:
     return user_settings.get(
-        "rename_pattern", "{title} - S{season}E{episode} [{quality}]"
+        "rename_pattern",
+        "{title} - S{season}E{episode} [{quality}]",
     )
 
 
 # Toggle auto rename ON/OFF
 def toggle_user_rename(user_settings: dict) -> dict:
     user_settings["auto_rename_enabled"] = not user_settings.get(
-        "auto_rename_enabled", False
+        "auto_rename_enabled",
+        False,
     )
     return user_settings
 
