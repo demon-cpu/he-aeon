@@ -6,7 +6,7 @@ async def ask_for_rename_pattern(client, message):
         "Please send the auto-rename pattern.\n\n"
         "You can use these placeholders:\n"
         "`{title}`, `{season}`, `{episode}`, `{year}`, `{quality}`, `{audio}`, `{ext}`\n\n"
-        "**Example:**\n`{title} - S{season}E{episode} - {quality}.{ext}`"
+        "**Example:**\n`{title} - S{season}E{episode} - {quality}.{ext}`",
     )
     response = await client.listen(message.chat.id)
     return response.text.strip()
@@ -80,5 +80,5 @@ def format_rename(metadata: dict, ext: str, pattern: str) -> str:
         year=metadata.get("year", "0000"),
         quality=metadata.get("quality", "NA"),
         audio=metadata.get("audio", "NA"),
-        ext=ext.lstrip(".")
+        ext=ext.lstrip("."),
     )
