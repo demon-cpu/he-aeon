@@ -24,6 +24,7 @@ from bot.helper.ext_utils.links_utils import (
     is_telegram_link,
     is_url,
 )
+from bot.helper.ext_utils.autorename_utils import is_autorename_enabled, apply_rename_pattern
 from bot.helper.listeners.task_listener import TaskListener
 from bot.helper.mirror_leech_utils.download_utils.aria2_download import (
     add_aria2c_download,
@@ -126,7 +127,13 @@ class Mirror(TaskListener):
 
         self.select = args["-s"]
         self.seed = args["-d"]
-        self.name = args["-n"]
+
+        # 🔁 Check if auto rename is enabled and apply pattern
+        if await is_autorename_enabled(user_id):
+            self.name = await apply_rename_pattern(self.message, args["-n"])
+        else:
+            self.name = args["-n"]
+
         self.up_dest = args["-up"]
         self.rc_flags = args["-rcf"]
         self.link = args["link"]
@@ -152,7 +159,7 @@ class Mirror(TaskListener):
 
         headers = args["-h"]
         is_bulk = args["-b"]
-
+        
         bulk_start = 0
         bulk_end = 0
         ratio = None
