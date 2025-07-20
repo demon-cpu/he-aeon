@@ -19,7 +19,8 @@ from bot.helper.ext_utils.rename_core import (
     is_autorename_enabled,
 )
 
-global_lock = Lock() GLOBAL_GID = set()
+global_lock = Lock()
+GLOBAL_GID = set()
 
 class TelegramDownloadHelper: def init(self, listener): self._processed_bytes = 0 self._start_time = time() self._listener = listener self._id = "" self.session = ""
 
